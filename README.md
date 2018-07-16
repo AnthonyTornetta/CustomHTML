@@ -1,21 +1,27 @@
 ##CustomHTML
-#What is it?
+##What is it?
 CustomHTML contains a few tags not present in normal HTML that would make my life tons easier.
 Thus, I added those tags.
 These tags will compile down into normal HTML by running this code.
 
-#What tags are present?
-<template src="/path/to/file.html" vars="varName='value'" /> - Copies and pastes one file into this one
+##What tags are present?
+```html
+<template src="/path/to/file.html" vars="varName='value'" /> <!-- Copies and pastes one file into this one -->
+```
 
-<var name="varName" value="1234" /> - Stores the value of "1234" in a variable called "varName"
-<var name="varName" /> - Compiles into 1234
+```html
+<var name="varName" value="1234" /> - <!-- Stores the value of "1234" in a variable called "varName" -->
+<var name="varName" /> - <!-- Compiles into 1234 -->
+```
 
+```html
 <if x="$varName" equal y="1234">
   <h1>That var is 1234!</h1>
 </if>
 <if x="$varName" notEqual y="1234">
   <h1>That var isn't 1234!</h1>
 </h1>
+```
 
 ^ Spits out "That var is 1234!" if the variable called "varName" is 1234, otherwise it'l spit out "That var isn't 1234!"
 
@@ -23,4 +29,4 @@ If operators include: equal, notEqual, lessThan, greaterThan, greaterOrEqual, an
 If a variable was never defined and used in a if tag, it will be the same as null in the if statement
 Thus to check if a variable is undefined, do <if x="$var" equals y="null">...</if>
 
-* When I say "spit out" I mean compiles into
+Note: When I say "spit out" I mean compiles into
