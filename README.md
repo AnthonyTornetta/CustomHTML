@@ -26,8 +26,8 @@ What Tags Are Present?
 
 ^ Spits out "That var is 1234!" if the variable called "varName" is 1234, otherwise it'l spit out "That var isn't 1234!"
 
-If operators include: equal, notEqual, lessThan, greaterThan, greaterOrEqual, and lessOrEqual
-If a variable was never defined and used in a if tag, it will be the same as null in the if statement
-Thus to check if a variable is undefined, do <if x="$var" equals y="null">...</if>
+If operators include: equal, notEqual, lessThan, greaterThan, greaterOrEqual, and lessOrEqual.
+If a variable was never defined and used in a if tag, it will be the same as null in the if statement.
+Thus to check if a variable is undefined, do <if x="$var" equals y="null">...</if>.
 
-Note: When I say "spit out" I mean compiles into
+Note: When I say "spit out" I mean compiles into.
