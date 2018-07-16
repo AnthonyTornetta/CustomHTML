@@ -1,10 +1,10 @@
-##CustomHTML
-##What is it?
+<h1>Custom HTML</h1>
+<h2>What is it?</h2>
 CustomHTML contains a few tags not present in normal HTML that would make my life tons easier.
 Thus, I added those tags.
 These tags will compile down into normal HTML by running this code.
 
-##What tags are present?
+<h2>What tags are present?</h2>
 ```html
 <template src="/path/to/file.html" vars="varName='value'" /> <!-- Copies and pastes one file into this one -->
 ```
