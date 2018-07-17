@@ -336,7 +336,7 @@ public class CustomHTML
 							String[] vars = OutsidePattern.split(varsStr, "=", "'");
 							for(int i = 0; i < vars.length; i += 2)
 							{
-								theirVariables.put(vars[0], vars[1].substring(1, vars[1].length() - 1)); // Removes the apostrophies surrounding the variable
+								theirVariables.put(vars[i], vars[i + 1].substring(1, vars[i + 1].length() - 1)); // Removes the apostrophies surrounding the variable
 							}
 						}
 						

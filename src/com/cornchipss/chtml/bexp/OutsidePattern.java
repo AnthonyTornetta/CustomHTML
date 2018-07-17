@@ -68,7 +68,7 @@ public class OutsidePattern
 			
 			lastIndex = index;
 			
-			index = index + 1 + OutsidePattern.indexOf(str.substring(index + 1), " ", "\"");
+			index = index + 1 + OutsidePattern.indexOf(str.substring(index + 1), lookFor, notInBegin, notInEnd);
 		}
 		
 		if(lastIndex + 1 != str.length())
