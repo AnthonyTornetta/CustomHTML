@@ -12,7 +12,7 @@ public class IfTag implements ICustomTag
 	public ReplaceResult[] use(String lines, Map<String, String> attributes, int tagStart, int tagEnd, Map<String, String> localVars, Map<String, String> outerVars)
 	{
 		String x = attributes.get("x");
-				
+		
 		String y = attributes.get("y");
 		
 		boolean evaluation = false;
