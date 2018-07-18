@@ -24,7 +24,14 @@ What Tags Are Present?
 </h1>
 ```
 
-^ Compiles into "<h1>That var is 1234!</h1>" if the variable called "varName" is 1234, otherwise it'l spit out "<h1>That var isn't 1234!</h1>"
+^ Compiles into 
+```html
+<h1>That var is 1234!</h1>
+```
+If the variable called "varName" is 1234, otherwise it'l spit out 
+```html
+<h1>That var isn't 1234!</h1>
+```
 In an if block when referring to a variable as opposed to an actual String value, start the variable name with a $
 
 If operators include: equal, notEqual, lessThan, greaterThan, greaterOrEqual, and lessOrEqual.
