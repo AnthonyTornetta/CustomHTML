@@ -28,6 +28,8 @@ public class CustomHTML
 	
 	private static Config cfg;
 	
+	private static boolean compiling = true;
+	
 	public static void main(String[] args) throws IOException
 	{
 		System.out.println("Starting...");
@@ -91,7 +93,7 @@ public class CustomHTML
 				catch(Exception ex)
 				{
 					ex.printStackTrace();
-					System.out.println("File " + f.getPath() + " had an error during parsing ;(");
+					System.out.println("File " + f.getPath() + " had an unkown error during parsing ;(");
 					return;
 				}
 			}
@@ -217,9 +219,9 @@ public class CustomHTML
 			{
 				System.out.println("!! BAD HTML TAG OPENING/CLOSING DETECTED IN FILE \"" + f.getPath() + "\" !!");
 				System.out.println("== Debug Info ==");
-				System.out.println("start: " + tagStart + " | finish: " + tagEnd);
-				System.out.println("start text: " + lines.substring(tagStart));
-				System.out.println("end text: " + lines.substring(tagEnd));
+				System.out.println("Start/End: " + tagStart + " | finish: " + tagEnd);
+				System.out.println("Start text: " + lines.substring(tagStart));
+				System.out.println("End text: " + lines.substring(tagEnd));
 				System.out.println("Stopping Compilation.");
 				
 				throw ex;
@@ -237,7 +239,7 @@ public class CustomHTML
 			String name = tagString.substring(0, space);
 			
 			// Handles Any Tags That Their Insides Shouldn't Be Touched By Me //
-
+			
 			boolean wasInIgnoredCode = false;
 			
 			if(name.equals("!--")) // Ignores blocks of comments
@@ -275,8 +277,8 @@ public class CustomHTML
 			if(!name.equalsIgnoreCase("!DOCTYPE"))
 			{
 				/**
-				 * Attributes are stored in here as attribute name, value.
-				 * If the attribute has no value but is present, it is assigned to be ""
+				 * Attributes are stored in here as attribute name: value.
+				 * If the attribute has no value but is present, it is assigned to be an empty String
 				 */
 				Map<String, String> attributes = new HashMap<>();
 				
@@ -299,7 +301,7 @@ public class CustomHTML
 						{
 							String[] splitEquals = OutsidePattern.split(attrLine, "=", "\"");
 							
-							if(splitEquals.length > 1) // There are some attributes w/ only a title and no value (e.g. download in the <a> tag)
+							if(splitEquals.length > 1) // for full attributes (something="asdf")
 							{
 								int quoteIndexBegin = splitEquals[1].indexOf("\"");
 								int quoteIndexEnd;
@@ -315,9 +317,21 @@ public class CustomHTML
 								
 								attributes.put(splitEquals[0], splitEquals[1].substring(quoteIndexBegin + 1, quoteIndexEnd)); // Removes the ""s around the attribute
 							}
+							else if(splitEquals.length == 1) // There are some attributes w/ only a title and no value (e.g. download in the <a> tag), so handle those differently
+							{
+								attributes.put(splitEquals[0], ""); // Give it the value of an empty String
+							}
 							else
 							{
-								attributes.put(splitEquals[0], "");
+								continue; // A line that is being skipped has been hit and has no characters after it
+								
+								/*
+								 * This has been shown to happen during multiline comments that begin like this:
+								 * <!--
+								 * ...
+								 * -->
+								 * With no whitespace after the comment opening
+								 */
 							}
 						}
 					}
@@ -341,6 +355,12 @@ public class CustomHTML
 						}
 						
 						ReplaceResult[] results = customTag.use(lines, attributes, tagStart, tagEnd, theirVariables, variables);
+						
+						if(!compiling)
+						{
+							System.err.println("Compilation stopped during this file's compilation: " + f.getAbsolutePath());
+							System.exit(1);
+						}
 						
 						if(results != null)
 						{
@@ -536,5 +556,13 @@ public class CustomHTML
 		{
 			addFiles(file, fileList);
 		}
+	}
+
+	public static void stopCompilation(String error)
+	{
+		System.err.println(error);
+		System.out.println("STOPPING COMPILATION!");
+		
+		compiling = false;
 	}
 }

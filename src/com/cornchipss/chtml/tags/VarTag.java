@@ -19,6 +19,7 @@ public class VarTag implements ICustomTag
 			}
 			else
 			{
+				// Setting the outerVars so the value is added to the global variable, as opposed to this tag's local variables
 				outerVars.put(varName, value);
 				return new ReplaceResult[] { new ReplaceResult("", tagStart, tagEnd + 1) };
 			}

@@ -24,13 +24,12 @@ What Tags Are Present?
 </h1>
 ```
 
-^ Spits out "That var is 1234!" if the variable called "varName" is 1234, otherwise it'l spit out "That var isn't 1234!"
+^ Compiles into "<h1>That var is 1234!</h1>" if the variable called "varName" is 1234, otherwise it'l spit out "<h1>That var isn't 1234!</h1>"
+In an if block when referring to a variable as opposed to an actual String value, start the variable name with a $
 
 If operators include: equal, notEqual, lessThan, greaterThan, greaterOrEqual, and lessOrEqual.
-If a variable was never defined and used in a if tag, it will be the same as null in the if statement.
+If a variable was never defined and used in a if tag, it will be the same as "undefined" in the if statement.
 Thus to check if a variable is undefined, do
 ```html
-<if x="$var" equals y="null">...</if>.
+<if x="$var" equals y="undefined">...</if>.
 ```
-
-Note: When I say "spit out" I mean compiles into.

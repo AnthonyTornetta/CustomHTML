@@ -53,8 +53,8 @@ public class TemplateTag implements ICustomTag
 			}
 			catch (IOException e)
 			{
-				e.printStackTrace();
-				linesToCopy = "";
+				CustomHTML.stopCompilation("Template File (" + templateFile + ") Not Found!");
+				return null;
 			}
 			
 			if(linesToCopy.length() > 0)

@@ -25,9 +25,9 @@ public class IfTag implements ICustomTag
 				y = localVars.get(y.substring(1));
 			
 			if(x == null)
-				x = "null";
+				x = "undefined";
 			if(y == null)
-				y = "null";
+				y = "undefined";
 		}
 		
 		if(attributes.get("greaterOrEqual") != null)
