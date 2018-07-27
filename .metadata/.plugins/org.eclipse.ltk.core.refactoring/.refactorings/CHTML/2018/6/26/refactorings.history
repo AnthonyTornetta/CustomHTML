@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy package &apos;com.cornchipss.chtml.util&apos; to &apos;KeyProgramManager/src/com.cornchipss.mgr&apos;&#x0D;&#x0A;- Original project: &apos;CHTML&apos;&#x0D;&#x0A;- Destination element: &apos;KeyProgramManager/src/com.cornchipss.mgr&apos;&#x0D;&#x0A;- Original element: &apos;CHTML/src/com.cornchipss.chtml.util&apos;" description="Copy package" destination="=KeyProgramManager/src&lt;com.cornchipss.mgr" element1="/src&lt;com.cornchipss.chtml.util" flags="589830" fragments="1" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyPackages" stamp="1530294700048" version="1.0"/>
+</session>

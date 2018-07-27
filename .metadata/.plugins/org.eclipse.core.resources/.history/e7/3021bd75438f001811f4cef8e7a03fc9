@@ -1,0 +1,86 @@
+package com.cornchipss.keyrunner;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
+import org.jnativehook.GlobalScreen;
+import org.jnativehook.NativeHookException;
+import org.jnativehook.keyboard.NativeKeyEvent;
+import org.jnativehook.keyboard.NativeKeyListener;
+
+import com.cornchipss.keyrunner.util.Config;
+
+public class KeyRunner implements NativeKeyListener
+{
+	private boolean altPressed = false;
+	
+	private static Config cfg = new Config("config.yml");
+	
+	public static void main(String[] args)
+	{
+		try
+		{
+			// Clear previous logging configurations.
+		    LogManager.getLogManager().reset();
+
+		    // Get the logger for "org.jnativehook" and set the level to off.
+		    Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
+		    logger.setLevel(Level.OFF);
+		    
+			GlobalScreen.registerNativeHook();
+		}
+		catch (NativeHookException ex)
+		{
+			System.err.println("There was a problem registering the native hook.");
+			System.err.println(ex.getMessage());
+
+			System.exit(1);
+		}
+		
+		GlobalScreen.addNativeKeyListener(new KeyRunner());
+	}
+	
+	public void nativeKeyPressed(NativeKeyEvent e)
+	{
+		if(e.getKeyCode() == NativeKeyEvent.VC_ALT)
+		{
+			altPressed = true;
+		}
+		
+		if(altPressed && cfg.containsKey(e.getKeyCode() + ""))
+		{
+			System.out.println("Running program.");
+			String path = cfg.getString(e.getKeyCode() + "");
+			
+			try
+			{
+				Runtime.getRuntime().exec(path);
+			}
+			catch (IOException e1)
+			{
+				e1.printStackTrace();
+			}
+		}
+		
+		if(altPressed && e.getKeyCode() == NativeKeyEvent.VC_P)
+		{
+			System.exit(0);
+		}
+	}
+
+	@Override
+	public void nativeKeyReleased(NativeKeyEvent e)
+	{
+		if(e.getKeyCode() == NativeKeyEvent.VC_ALT)
+		{
+			altPressed = false;
+		}
+	}
+
+	public void nativeKeyTyped(NativeKeyEvent e)
+	{
+		System.out.println("Key Typed: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
+	}
+}

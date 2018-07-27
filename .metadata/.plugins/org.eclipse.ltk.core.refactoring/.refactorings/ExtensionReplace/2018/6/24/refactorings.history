@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename method &apos;com.cornchipss.extrep.Replacer.addFiles(...)&apos; to &apos;renameFiles&apos;&#x0D;&#x0A;- Original project: &apos;ExtensionReplace&apos;&#x0D;&#x0A;- Original element: &apos;com.cornchipss.extrep.Replacer.addFiles(...)&apos;&#x0D;&#x0A;- Renamed element: &apos;com.cornchipss.extrep.Replacer.renameFiles(...)&apos;&#x0D;&#x0A;- Update references to refactored element" delegate="false" deprecate="false" description="Rename method &apos;addFiles&apos;" flags="589826" id="org.eclipse.jdt.ui.rename.method" input="/src&lt;com.cornchipss.extrep{Replacer.java[Replacer~addFiles~QFile;" name="renameFiles" references="true" stamp="1528899591543" version="1.0"/>
+</session>

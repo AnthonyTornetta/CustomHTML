@@ -1,0 +1,18 @@
+1528592580643	Rename local variable 'firstTag'
+1528945919544	Delete element
+1528945920372	Delete element
+1528945921523	Delete element
+1528945991372	Rename local variable 'lines'
+1528945998910	Rename local variable 'actualLines'
+1528946496236	Rename local variable 'origFileLines'
+1528946759544	Rename method 'getRelativeDir'
+1528986423661	Delete element
+1528986948177	Rename local variable 'tagEnd'
+1528986986837	Rename local variable 'tagEndStart'
+1528986991358	Rename local variable 'tagEndEnd'
+1528987196014	Rename type 'CustomTag'
+1528987376613	Rename type 'NothingResult'
+1528987521306	Delete element
+1528987690857	Delete element
+1528987830556	Delete element
+1528987983086	Rename method 'getFin'

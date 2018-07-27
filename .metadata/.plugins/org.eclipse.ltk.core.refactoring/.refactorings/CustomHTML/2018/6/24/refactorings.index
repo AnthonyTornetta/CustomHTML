@@ -1,0 +1,21 @@
+1528594907792	Move compilation unit
+1528595327291	Rename package 'com.cornchipss.customhtml.util'
+1528739432593	Rename local variable 'plus'
+1528829145644	Rename local variable 'ignore'
+1528829155492	Rename local variable 'ignoreClosing'
+1528837445816	Rename type 'NotInsidePattern'
+1528837464209	Delete element
+1528837465889	Delete element
+1528846706592	Rename local variable 'split'
+1528898681200	Delete element
+1528904492680	Rename type 'Replace'
+1528904502516	Rename package 'com.cornchipss.rep'
+1528904510184	Rename package 'com.cornchipss.rep.util'
+1528904517443	Rename package 'com.cornchipss.rep.util.bexp'
+1528904523469	Copy package
+1528904526628	Delete element
+1528904536928	Move compilation unit
+1528904538477	Delete element
+1528904551909	Delete element
+1528945738070	Rename local variable 'closingTag'
+1528945947158	Copy packages
