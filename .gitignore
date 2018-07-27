@@ -26,3 +26,5 @@ hs_err_pid*
 processor-config.yml
 *.css
 .recommenders/
+.settings/
+/.metadata/

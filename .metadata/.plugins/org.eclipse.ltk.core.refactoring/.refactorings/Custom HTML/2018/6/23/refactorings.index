@@ -1,7 +1,0 @@
-1528491051224	Rename package 'com.cornchipss.main'
-1528494557546	Rename method 'isClosing'
-1528494562450	Rename field 'isClosingTag'
-1528494697088	Rename type 'HTMLFile'
-1528494700399	Rename field 'dom'
-1528495996030	Rename local variable 'tag'
-1528497954751	Rename local variable 'splitUp'
