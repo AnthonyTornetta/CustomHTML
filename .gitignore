@@ -25,6 +25,6 @@ hs_err_pid*
 # Project-dependant
 processor-config.yml
 *.css
-.recommenders/
-.settings/
+/.recommenders/
+/.settings/
 /.metadata/
