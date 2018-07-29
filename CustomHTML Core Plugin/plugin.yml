@@ -1,7 +1,7 @@
 # The plugin.yml for the core plugin for CustomHTML
 # https://github.com/Cornchipss/CustomHTML
 
-main: com.cornchipss.chtml.core.CustomHTMLCore
+main: com.cornchipss.chtml.core.CustomHTMLCorePlugin
 version: 0.0.1
 author: Cornchip
-name: CustomHTML Core
+name: CustomHTML Core Plugin

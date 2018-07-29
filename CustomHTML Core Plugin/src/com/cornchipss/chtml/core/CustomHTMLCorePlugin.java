@@ -7,7 +7,7 @@ import com.cornchipss.chtml.plugins.CustomHTMLPlugin;
 
 import static com.cornchipss.chtml.TagRegistry.registerTag;
 
-public class CustomHTMLCore extends CustomHTMLPlugin
+public class CustomHTMLCorePlugin extends CustomHTMLPlugin
 {
 	@Override
 	public void enable()
