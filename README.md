@@ -10,7 +10,7 @@
   <li>Author name</li>
   <li>Version</li>
   <li>Plugin's Name</li>
-<ul>
+</ul>
 </p>
 <p>Take a look at the Core plugin to see how the plugin.yml is formatted</p>
 <p>Your plugin's main class should extend the CustomHTMLPlugin class and override the enable method.</p>
