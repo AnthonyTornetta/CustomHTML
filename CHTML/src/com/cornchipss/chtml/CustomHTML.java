@@ -17,50 +17,46 @@ import java.util.Map;
 import java.util.Scanner;
 
 import com.cornchipss.chtml.bexp.OutsidePattern;
-import com.cornchipss.chtml.results.ReplaceResult;
+import com.cornchipss.chtml.exceptions.InvalidPluginYMLException;
+import com.cornchipss.chtml.plugins.CustomHTMLPlugin;
+import com.cornchipss.chtml.plugins.PluginLoader;
+import com.cornchipss.chtml.results.Result;
 import com.cornchipss.chtml.tags.ICustomTag;
 import com.cornchipss.chtml.util.Config;
 import com.cornchipss.chtml.util.Helper;
 
-public class CustomHTML
+public final class CustomHTML
 {
 	public static final String NO_OUTPUT_FLAG = "<!--NOOUTPUT-->";
 	
-	private static Config cfg;
+	private static String[] compilableExtensions;
+	private static String relativeDir, saveTo;
+	
+	private List<String> ignoredFileTypes;
 	
 	private static boolean compiling = true;
 	
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args) throws IOException, InvalidPluginYMLException
+	{
+		new CustomHTML(args);
+	}
+	
+	private CustomHTML(String[] args) throws IOException, InvalidPluginYMLException
 	{
 		System.out.println("Starting...");
 		
-		TagRegistry.reigsterAll();
+		Config cfg = new Config("processor-config.yml");
 		
-		cfg = new Config("processor-config.yml");
+		loadConfig(cfg, args);
 		
-		if(args.length == 3)
-		{
-			cfg.setString("relative-dir", args[0]);
-			cfg.setString("save-to", args[1]);
-			cfg.setString("search-in", args[2]);
-			cfg.save();
-		}
+		File pluginsDirectory = new File("plugins");
+		pluginsDirectory.mkdir(); // Make sure the plugins directory exists before trying to use it
 		
-		if(!cfg.containsKey("relative-dir") || !cfg.containsKey("save-to") || !cfg.containsKey("search-in"))
-		{			
-			Scanner scan = new Scanner(System.in);
-			System.out.print("Relative Directory (starting project directory): ");
-			cfg.setString("relative-dir", scan.nextLine());
-			System.out.print("Save compiled files to directory               : ");
-			cfg.setString("save-to", scan.nextLine());
-			System.out.print("Search for files to compile directory          : ");
-			cfg.setString("search-in", scan.nextLine());
-			
-			cfg.save();
-			scan.close();
-		}
+		loadPlugins(pluginsDirectory);
 		
-		List<String> ignoredFileTypes = new ArrayList<>();
+		TagRegistry.init();
+		
+		ignoredFileTypes = new ArrayList<>();
 		
 		if(cfg.containsKey("ignored-file-types"))
 		{
@@ -68,21 +64,21 @@ public class CustomHTML
 			ignoredFileTypes.addAll(Arrays.asList(split));
 		}
 		
-		String searchDir = cfg.getString("search-in");
-		
+		// Every file in the relativeDir directory
 		List<File> files = new ArrayList<>();
 		
-		addFiles(new File(searchDir), files);
+		Helper.addFiles(new File(relativeDir), files);
 		
 		System.out.println(files.size() + " files found to process...");
 		
 		int filesOutputed = 0;
 		
+		// Goes through each file and parses if it needed, otherwise copies it over
 		for(int i = 0; i < files.size(); i++)
 		{
 			File f = files.get(i);
 			
-			String newLines;
+			String newLines = null;
 			
 			if(isFileToParse(f))
 			{
@@ -96,66 +92,19 @@ public class CustomHTML
 					System.out.println("File " + f.getPath() + " had an unkown error during parsing ;(");
 					return;
 				}
-			}
-			else
-			{
-				newLines = "";
-				BufferedReader br = new BufferedReader(new FileReader(f));
-				for(String line = br.readLine(); line != null; line = br.readLine())
-					newLines += line + "\n";
-				br.close();
-			}
-			
-			if(newLines == null)
-			{
-				System.out.println((i + 1) + "/" + files.size() + " files completed.");
-				continue; // This is a no-output file
-			}
-			
-			String saveTo = cfg.getString("save-to");
-			String slashOrNoSlash = saveTo.charAt(saveTo.length() - 1) == '/' ? "" : "/";
-			
-			String relDir = cfg.getString("relative-dir");
-			
-			String filesPath = f.getPath();
-			int x = 0;
-			while(x < filesPath.length() && relDir.indexOf(filesPath.substring(0, x + 1)) == 0)
-				x++;
-			
-			String howToSave = filesPath.substring(x);
-			
-			String saveToPath = saveTo + slashOrNoSlash + howToSave;
-			String directoriesPath = saveToPath.substring(0, saveToPath.lastIndexOf("\\") + 1);
-			
-			File pathTo = new File(directoriesPath);
-			pathTo.mkdirs(); // Creates the file's directory if it doesn't exist	
-			
-			if(isFileToParse(f))
-			{
-				File newFile = new File(saveToPath);
-				newFile.createNewFile();
-			
-				BufferedWriter bw = new BufferedWriter(new FileWriter(newFile));
-				bw.write(newLines);
-				bw.close();
-			}
-			else
-			{
-				String extension = f.getName().substring(f.getName().lastIndexOf(".") + 1);
 				
-				boolean badBoi = false;
-				
-				for(String type : ignoredFileTypes)
+				if(newLines == null)
 				{
-					if(type.equals(extension))
-					{
-						badBoi = true;
-						break;
-					}
+					System.out.println((i + 1) + "/" + files.size() + " files completed.");
+					continue; // This is a no-output file
 				}
 				
-				if(!badBoi)
-					Files.copy(f.toPath(), FileSystems.getDefault().getPath(saveToPath), StandardCopyOption.REPLACE_EXISTING);
+				saveToCompiledDir(f, newLines);
+			}
+			else
+			{
+				// Copies the file to the new directory if they cannot be parsed
+				copyFileToNewDir(f);
 			}
 			
 			System.out.println((i + 1) + "/" + files.size() + " files completed.");
@@ -164,6 +113,127 @@ public class CustomHTML
 		
 		System.out.println("Complete! " + filesOutputed + " file" + (filesOutputed != 1 ? "s" : "") + " outputted!");
 	}
+	
+	/**
+	 * Loads the data from the config and creates it if it doens't exist
+	 * @param cfg The config to read from
+	 * @param args The arguments passed in from the user
+	 * @throws IOException If there is an error saving the config
+	 */
+	private void loadConfig(Config cfg, String[] args) throws IOException
+	{
+		if(args.length == 3)
+		{
+			cfg.setString("relative-dir", args[0]);
+			cfg.setString("save-to", args[1]);
+			cfg.save();
+		}
+		
+		if(!cfg.containsKey("relative-dir") || !cfg.containsKey("save-to"))
+		{			
+			Scanner scan = new Scanner(System.in);
+			System.out.print("Relative Directory (starting project directory): ");
+			cfg.setString("relative-dir", scan.nextLine());
+			System.out.print("Save compiled files to directory               : ");
+			cfg.setString("save-to", scan.nextLine());
+			
+			cfg.save();
+			scan.close();
+		}
+		
+		if(!cfg.containsKey("compilable-extensions"))
+		{
+			cfg.setString("compilable-extensions", "html, php");
+			cfg.save();
+		}
+		
+		String extensions = cfg.getString("compilable-extensions");
+		
+		compilableExtensions = extensions.replace(" ", "").split(",");
+		relativeDir = cfg.getString("relative-dir");
+		saveTo = cfg.getString("save-to");
+	}
+
+	/**
+	 * Saves a new file to the new directory with the new lines
+	 * @param f The old file to get the name of
+	 * @param newLines The lines to put in the new file
+	 * @throws IOException If there is some sort of saving error
+	 */
+	private void saveToCompiledDir(File f, String newLines) throws IOException
+	{
+		File newFile = new File(getSaveToPath(f));
+		newFile.createNewFile();
+	
+		BufferedWriter bw = new BufferedWriter(new FileWriter(newFile));
+		bw.write(newLines);
+		bw.close();
+	}
+	
+	/**
+	 * Copies the old file to the new file's location
+	 * @param f The file to copy
+	 * @throws IOException If there is an error finding the new path or copying
+	 */
+	public void copyFileToNewDir(File f) throws IOException
+	{
+		Files.copy(f.toPath(), FileSystems.getDefault().getPath(getSaveToPath(f)), StandardCopyOption.REPLACE_EXISTING);
+	}
+	
+	/**
+	 * Gets the full path to save the new version of the file to
+	 * @param f The old file to make a new version of
+	 * @return The path to the new file
+	 */
+	public String getSaveToPath(File f)
+	{
+		// Checks if a slash should be added to the end of the directory
+		String slashOrNoSlash = (saveTo.endsWith("/") || saveTo.endsWith("\\")) ? "" : "/";
+		
+		String filesPath = f.getPath();
+		
+		// Finds the index of where to place the new path
+		int x = 0;
+		while(x < filesPath.length() && relativeDir.indexOf(filesPath.substring(0, x + 1)) == 0)
+			x++;
+		
+		String howToSave = filesPath.substring(x);
+		
+		String saveToPath = saveTo + slashOrNoSlash + howToSave;
+		
+		// Makes sure the directory actually exists
+		String directoriesPath = saveToPath.substring(0, saveToPath.lastIndexOf("\\") + 1);
+		
+		File pathTo = new File(directoriesPath);
+		pathTo.mkdirs(); // Creates the file's directory if it doesn't exist
+		
+		return saveToPath;
+	}
+	
+	/**
+	 * Loads all the plugins in the plugins folder
+	 * @param pluginsDirectory The plugins directory to load them from
+	 * @throws InvalidPluginYMLException If one of the plugins has an invalid YML
+	 * @throws IOException If there was an error reading one of the plugin files
+	 */
+	private void loadPlugins(File pluginsDirectory) throws InvalidPluginYMLException, IOException
+	{
+		for(File f : pluginsDirectory.listFiles())
+		{
+			if(!f.isDirectory())
+			{
+				String extension = Helper.getExtension(f);
+				if(extension.equalsIgnoreCase("jar"))
+				{
+					CustomHTMLPlugin p = PluginLoader.loadPlugin(f);
+					
+					p.enable();
+				}
+			}
+		}
+	}
+
+	// TODO: Make replaceAllNeeded less sloppy
 	
 	/**
 	 * Parses the CustomHTML in a file into HTML
@@ -253,7 +323,7 @@ public class CustomHTML
 			else if(name.length() >= "?".length() && name.contains("?")) // Ignores blocks of php
 			{
 				wasInIgnoredCode = true;
-				int[] startEnd = findClosingTag("<?", "?>", lines, tagEnd + 1);
+				int[] startEnd = findClosingTag("?>", lines, tagEnd + 1);
 				tagStart = startEnd[0];
 				tagEnd = startEnd[1] + 1;
 			}
@@ -354,7 +424,7 @@ public class CustomHTML
 							}
 						}
 						
-						ReplaceResult[] results = customTag.use(lines, attributes, tagStart, tagEnd, theirVariables, variables);
+						Result[] results = customTag.use(lines, attributes, tagStart, tagEnd, theirVariables, variables);
 						
 						if(!compiling)
 						{
@@ -426,48 +496,6 @@ public class CustomHTML
 	
 	/**
 	 * Finds the closing tag and returns the beginning index of the closing tag at the returned array index of 0, and the end tag's index at the returned array's index of 1
-	 * @param openingTag The opening tag of the tag you're searching for
-	 * @param closingTag The closing tag to search for
-	 * @param lines The lines to search for the closing tag in
-	 * @param startLookingAt The index to start the search at (after the initial opening tag)
-	 * @return The beginning index of the closing tag at the returned array index of 0, and the end tag's index at the returned array's index of 1
-	 */
-	public static int[] findClosingTag(String openingTag, String closingTag, String lines, int startLookingAt)
-	{
-		int start = -1;
-		
-		int enclosedIn = 0;
-		
-		for(int i = startLookingAt; i + closingTag.length() <= lines.length(); i++)
-		{
-			if(i + openingTag.length() <= lines.length())
-			{
-				if(lines.substring(i, i + openingTag.length()).equalsIgnoreCase(openingTag))
-				{
-					enclosedIn++;
-				}
-			}
-			
-			if(lines.substring(i, i + closingTag.length()).equalsIgnoreCase(closingTag))
-			{
-				if(enclosedIn == 0)
-				{
-					start = i;
-					break;
-				}
-				else
-					enclosedIn--;
-			}
-		}
-		
-		if(start == -1)
-			return new int[] { -1, -1 };
-		else
-			return new int[] { start, start + closingTag.length() - 1 };
-	}
-	
-	/**
-	 * Finds the closing tag and returns the beginning index of the closing tag at the returned array index of 0, and the end tag's index at the returned array's index of 1
 	 * @param closingTag The closing tag to search for
 	 * @param lines The lines to search for the closing tag in
 	 * @param startLookingAt The index to start the search at (after the initial opening tag)
@@ -500,20 +528,18 @@ public class CustomHTML
 	 */
 	public static String calculateRelativeDir(String dir)
 	{
-		String relDir = cfg.getString("relative-dir");
-		
 		if(dir.charAt(0) == '/')
 		{
-			if(relDir.charAt(relDir.length() - 1) == '/')
-				relDir = relDir.substring(0, relDir.length() - 1);
+			if(relativeDir.charAt(relativeDir.length() - 1) == '/')
+				relativeDir = relativeDir.substring(0, relativeDir.length() - 1);
 			
-			dir = relDir + dir;
+			dir = relativeDir + dir;
 		}
 		else
 		{
-			if(relDir.charAt(relDir.length() - 1) != '/')
-				relDir += "/";
-			dir = relDir + dir;
+			if(relativeDir.charAt(relativeDir.length() - 1) != '/')
+				relativeDir += "/";
+			dir = relativeDir + dir;
 		}
 		
 		return dir;
@@ -526,38 +552,17 @@ public class CustomHTML
 	 */
 	private static boolean isFileToParse(File f)
 	{
-		String extension = f.getName().substring(f.getName().lastIndexOf(".") + 1).toLowerCase();
-		return extension.equals("html") || extension.equals("php");
+		String extension = Helper.getExtension(f);
+		for(String s : compilableExtensions)
+			if(s.equals(extension))
+				return true;
+		return false;
 	}
 	
 	/**
-	 * Recursively adds files to a given list. This trickles down directories so no need to search them specifically
-	 * @param folder The folder to start the search in
-	 * @param fileList The list to add the files to
+	 * Stops the compilation
+	 * @param error The error to display
 	 */
-	private static void addFiles(File folder, List<File> fileList)
-	{
-		List<File> directories = new ArrayList<>(); // So directories are added afterwards
-		
-		for(File file : folder.listFiles())
-		{
-			if(file.isDirectory())
-			{
-				directories.add(file);
-			}
-			else
-			{
-				fileList.add(file);
-			}
-		}
-		
-		// This way it lists the files in the directory it's currently in first before delving deeper too avoid a disorganized mess
-		for(File file : directories)
-		{
-			addFiles(file, fileList);
-		}
-	}
-
 	public static void stopCompilation(String error)
 	{
 		System.err.println(error);

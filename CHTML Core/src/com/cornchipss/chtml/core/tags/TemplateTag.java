@@ -1,4 +1,4 @@
-package com.cornchipss.chtml.tags;
+package com.cornchipss.chtml.core.tags;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,13 +7,14 @@ import java.util.Map;
 
 import com.cornchipss.chtml.CustomHTML;
 import com.cornchipss.chtml.bexp.OutsidePattern;
-import com.cornchipss.chtml.results.ReplaceResult;
+import com.cornchipss.chtml.results.Result;
+import com.cornchipss.chtml.tags.ICustomTag;
 import com.cornchipss.chtml.util.Helper;
 
 public class TemplateTag implements ICustomTag
 {
 	@Override
-	public ReplaceResult[] use(String lines, Map<String, String> attributes, int tagStart, int tagEnd, Map<String, String> localVars, Map<String, String> outerVars)
+	public Result[] use(String lines, Map<String, String> attributes, int tagStart, int tagEnd, Map<String, String> localVars, Map<String, String> outerVars)
 	{
 		String src = attributes.get("src");
 		
@@ -62,7 +63,7 @@ public class TemplateTag implements ICustomTag
 				linesToCopy = linesToCopy.substring(0, linesToCopy.length() - 1); // Remove the \n at the end
 			}
 			
-			return new ReplaceResult[] { new ReplaceResult(linesToCopy, tagStart, tagEnd + 1) };
+			return new Result[] { new Result(linesToCopy, tagStart, tagEnd + 1) };
 		}
 		
 		return null;

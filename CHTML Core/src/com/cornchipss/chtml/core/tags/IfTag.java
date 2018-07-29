@@ -1,15 +1,16 @@
-package com.cornchipss.chtml.tags;
+package com.cornchipss.chtml.core.tags;
 
 import java.util.Map;
 
 import com.cornchipss.chtml.CustomHTML;
-import com.cornchipss.chtml.results.ReplaceResult;
+import com.cornchipss.chtml.results.Result;
+import com.cornchipss.chtml.tags.ICustomTag;
 import com.cornchipss.chtml.util.Helper;
 
 public class IfTag implements ICustomTag
 {
 	@Override
-	public ReplaceResult[] use(String lines, Map<String, String> attributes, int tagStart, int tagEnd, Map<String, String> localVars, Map<String, String> outerVars)
+	public Result[] use(String lines, Map<String, String> attributes, int tagStart, int tagEnd, Map<String, String> localVars, Map<String, String> outerVars)
 	{
 		String x = attributes.get("x");
 		
@@ -93,11 +94,11 @@ public class IfTag implements ICustomTag
 		
 		if(!evaluation)
 		{
-			return new ReplaceResult[] {new ReplaceResult("", tagStart, closingEnd + 1)};
+			return new Result[] {new Result("", tagStart, closingEnd + 1)};
 		}
 		else
 		{
-			return new ReplaceResult[] {new ReplaceResult("", tagStart, tagEnd + 1), new ReplaceResult("", closingStart, closingEnd + 1)};
+			return new Result[] {new Result("", tagStart, tagEnd + 1), new Result("", closingStart, closingEnd + 1)};
 		}
 	}
 

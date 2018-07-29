@@ -1,5 +1,6 @@
 package com.cornchipss.chtml.util;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,63 +39,59 @@ public class Helper
 	
 	public static boolean isInt(String possibleNumber)
 	{
-		boolean validNumber = false; // We use this to see if the last number checked was a number too
-		
-		for(int i = 0; i < possibleNumber.length(); i++)
+		try
 		{
-			char checking = possibleNumber.charAt(i);
-			
-			if(checking == '-' || checking == '+')
-			{
-				if(possibleNumber.length() == i + 1) // All the number is is '-' or '+'
-					return false;
-				if(validNumber) // There were already numbers found
-					return false;
-			}
-			else
-			{
-				for(char j = '0'; j <= '9'; j++)
-				{
-					if(checking == j)
-					{
-						validNumber = true;
-					}
-				}
-				if(!validNumber)
-					return false;
-			}
+			Integer.parseInt(possibleNumber);
+			return true;
 		}
-		return true; // We only got here if no exception was found and it is a number
+		catch(NumberFormatException ex)
+		{
+			return false;
+		}
 	}
 	
 	public static boolean isDouble(String possibleDouble)
 	{
-		boolean decimalFound = false;
-		boolean validNumber = false;
-		
-		for(int i = 0; i < possibleDouble.length(); i++)
+		try
 		{
-			char checking = possibleDouble.charAt(i);
-			if(checking == ' ')
-				return false;
-			
-			if(checking == '.')
-			{
-				if(decimalFound)
-					return false; // 2 decimals found
-				decimalFound = true;
-			}
-			else if(checking == '-' || checking == '+')
-			{
-				if(possibleDouble.length() == i + 1) // All the number is is '-'
-					return false;
-				if(validNumber || decimalFound) // There were already numbers found
-					return false;
-			}
-			else if(!(checking >= '0' && checking <= '9'))
-					return false;
+			Double.parseDouble(possibleDouble);
+			return true;
 		}
-		return true; // We only got here if no exception was found and it is a number
+		catch(NumberFormatException ex)
+		{
+			return false;
+		}
+	}
+	
+	/**
+	 * Recursively adds files to a given list. This trickles down directories so no need to search them specifically
+	 * @param folder The folder to start the search in
+	 * @param fileList The list to add the files to
+	 */
+	public static void addFiles(File folder, List<File> fileList)
+	{
+		if(!folder.isDirectory())
+			throw new IllegalStateException("Folder must be directory!");
+		
+		List<File> directories = new ArrayList<>(); // So directories are added afterwards
+		
+		for(File file : folder.listFiles())
+		{
+			if(file.isDirectory())
+			{
+				directories.add(file);
+			}
+			else
+			{
+				fileList.add(file);
+			}
+		}
+		
+		// This way it lists the files in the directory it's currently in first before delving deeper too avoid a disorganized mess
+		for(File file : directories)
+		{
+			addFiles(file, fileList);
+		}
 	}
 	
 	public static String[] getStringsBetween(String str, String open, String close)
@@ -228,5 +225,13 @@ public class Helper
 		for(int i = 0; i < str.length(); i++)
 			noSpaces += str.charAt(i) != ' ' ? str.charAt(i) : "";
 		return noSpaces;
+	}
+	
+	public static String getExtension(File f)
+	{
+		if(f.getName().contains("."))
+			return f.getName().substring(f.getName().lastIndexOf(".") + 1);
+		else
+			return "";
 	}
 }

@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +16,7 @@ public class Config
 	/**
 	 * The file to be saved and read from
 	 */
-	private File configFile;
+	private File configFile = null;
 	
 	/**
 	 * Keeps track of comments based of things respective keys so when the config is saved, the comments aren't lost
@@ -54,100 +56,131 @@ public class Config
 	 * <p>The config file will be created if it doesn't exist.</p>
 	 * <p>The file saving format is of the .yml file type.</p>
 	 * @param path The path to the config file. If no file exists, it will be created when save() is called.
+	 * @throws IOException If anything goes wrong
 	 */
-	public Config(String path)
+	public Config(String path) throws IOException
 	{
-		try
-		{
-			configFile = new File(path);
-			if(configFile.exists())
-			{
-				BufferedReader br = new BufferedReader(new FileReader(configFile));
-			    
-			    // Preserves comments in the config file
-			    StringBuilder commentStringBuilder = new StringBuilder();
-			    
-			    // Read all the lines and put them into the array list
-			    for(String line = br.readLine(); line != null; line = br.readLine())
-			    {
-		        	if(line.length() >= 1)
-		        	{
-		        		if(Helper.removeTrailingWhiteSpace(line).charAt(0) != COMMENT_CHAR)
-		        		{
-							String[] split = line.split(": ");
-							if(split.length == 1)
-								split = line.split(":"); // Check if they just had no space after the colon
-							
-							if(split.length > 1) // This is a thing we should parse
-							{
-								if(Helper.isInt(split[1]))
-								{
-									ints.put(split[0], Integer.parseInt(split[1]));
-								}
-								else if(Helper.isDouble(split[1]))
-								{
-									doubles.put(split[0], Double.parseDouble(split[1]));
-								}
-								else
-								{
-									boolean isIntArray = true;
-									boolean isDoubleArray = true;
-									
-									// Check if it's a number array
-									String[] superSplit = split[1].split(",");
-									for(int i = 0; i < superSplit.length; i++)
-									{
-										superSplit[i] = Helper.removeTrailingWhiteSpace(superSplit[i]);
-										if(!Helper.isInt(superSplit[i]))
-											isIntArray = false;
-										if(!isIntArray && !Helper.isDouble(superSplit[i]))
-											isDoubleArray = false;
-									}
-									
-									if(isIntArray)
-									{
-										Integer[] arr = new Integer[superSplit.length];
-										for(int i = 0; i < superSplit.length; i++)
-										{
-											arr[i] = Integer.parseInt(superSplit[i]);
-										}
-										
-										intArrays.put(split[0], arr);
-									}
-									else if(isDoubleArray)
-									{
-										Double[] arr = new Double[superSplit.length];
-										for(int i = 0; i < superSplit.length; i++)
-										{
-											arr[i] = Double.parseDouble(superSplit[i]);
-										}
-										
-										doubleArrays.put(split[0], arr);
-									}
-									else
-										strings.put(split[0], split[1]); // If all else fails, it's a String
-								}
-								
-								// Puts comments in by the key they were behind
-								comments.put(split[0], commentStringBuilder.toString());
-								commentStringBuilder.setLength(0); // Clears the string builder
-							}
-		        		}
-		        		else
-		        		{
-	    	        		commentStringBuilder.append(line + "\r\n");
-		        		}
-		        	}
-			    }
-			    br.close();
-			}
-		} 
-		catch (IOException ex) 
-		{
-			ex.printStackTrace();
-		}
+		this(null, new File(path));
 	}
 	
+	/**
+	 * <p>Reads and rights to a config file using the following format: <code>[key]: [data]</code></p>
+	 * <p>Comments should be started on a seperate line from values, and the first character on that line must be a '#' character.</p>
+	 * <p>The config file will be created if it doesn't exist.</p>
+	 * <p>The file saving format is of the .yml file type.</p>
+	 * @param is The InputStream to the config file. If no file exists, it will be created when save() is called.
+	 * @throws IOException If anything goes wrong
+	 */
+	public Config(InputStream is) throws IOException
+	{
+		this(new BufferedReader(new InputStreamReader(is, "UTF-8")), null);
+	}
+	
+	private void makeFile() throws IOException
+	{
+		new File(configFile.getAbsolutePath().substring(0, configFile.getAbsolutePath().lastIndexOf("\\"))).mkdirs();
+		configFile.createNewFile();
+	}
+	
+	/**
+	 * <p>Reads and rights to a config file using the following format: <code>[key]: [data]</code></p>
+	 * <p>Comments should be started on a seperate line from values, and the first character on that line must be a '#' character.</p>
+	 * <p>The config file will be created if it doesn't exist.</p>
+	 * <p>The file saving format is of the .yml file type.</p>
+	 * @param br The input of the config file. If this is null but the file is not, a BufferedReader will be created from that file.
+	 * @param f The config file. If this is null, the config cannot be saved.
+	 * @throws IOException If anything goes wrong
+	 */
+	private Config(BufferedReader br, File f) throws IOException
+	{
+		configFile = f;
+		
+		if(configFile != null)
+		{
+			makeFile();
+			
+			if(br == null)
+				br = new BufferedReader(new FileReader(configFile));
+		}
+		// Preserves comments in the config file
+	    StringBuilder commentStringBuilder = new StringBuilder();
+		
+	    // Read all the lines and put them into the array list
+	    for(String line = br.readLine(); line != null; line = br.readLine())
+	    {
+        	if(line.length() >= 1)
+        	{
+        		if(Helper.removeTrailingWhiteSpace(line).charAt(0) != COMMENT_CHAR)
+        		{
+					String[] split = line.split(": ");
+					if(split.length == 1)
+						split = line.split(":"); // Check if they just had no space after the colon
+					
+					if(split.length > 1) // This is a thing we should parse
+					{
+						if(Helper.isInt(split[1]))
+						{
+							ints.put(split[0], Integer.parseInt(split[1]));
+						}
+						else if(Helper.isDouble(split[1]))
+						{
+							doubles.put(split[0], Double.parseDouble(split[1]));
+						}
+						else
+						{
+							boolean isIntArray = true;
+							boolean isDoubleArray = true;
+							
+							// Check if it's a number array
+							String[] superSplit = split[1].split(",");
+							for(int i = 0; i < superSplit.length; i++)
+							{
+								superSplit[i] = Helper.removeTrailingWhiteSpace(superSplit[i]);
+								if(!Helper.isInt(superSplit[i]))
+									isIntArray = false;
+								if(!isIntArray && !Helper.isDouble(superSplit[i]))
+									isDoubleArray = false;
+							}
+							
+							if(isIntArray)
+							{
+								Integer[] arr = new Integer[superSplit.length];
+								for(int i = 0; i < superSplit.length; i++)
+								{
+									arr[i] = Integer.parseInt(superSplit[i]);
+								}
+								
+								intArrays.put(split[0], arr);
+							}
+							else if(isDoubleArray)
+							{
+								Double[] arr = new Double[superSplit.length];
+								for(int i = 0; i < superSplit.length; i++)
+								{
+									arr[i] = Double.parseDouble(superSplit[i]);
+								}
+								
+								doubleArrays.put(split[0], arr);
+							}
+							else
+								strings.put(split[0], split[1]); // If all else fails, it's a String
+						}
+						
+						// Puts comments in by the key they were behind
+						comments.put(split[0], commentStringBuilder.toString());
+						commentStringBuilder.setLength(0); // Clears the string builder
+					}
+        		}
+        		else
+        		{
+	        		commentStringBuilder.append(line + "\r\n");
+        		}
+        	}
+	    }
+	    
+	    br.close();
+	}
+
 	/**
 	 * Sets a integer value at a given key
 	 * @param key The key to set the value at
@@ -357,6 +390,11 @@ public class Config
 	 */
 	public void save() throws IOException
 	{
+		if(configFile == null)
+		{
+			throw new IllegalStateException("Config File without a file to save to cannot be saved!");
+		}
+		
 		new File(configFile.getAbsolutePath().substring(0, configFile.getAbsolutePath().lastIndexOf("\\"))).mkdirs();
 		configFile.createNewFile();
 		
