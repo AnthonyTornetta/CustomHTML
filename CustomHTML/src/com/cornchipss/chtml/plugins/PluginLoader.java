@@ -40,8 +40,6 @@ public final class PluginLoader
 		if(!cfg.containsKey("main"))
 			throw new InvalidPluginYMLException("No value for the main class found!");
 		
-		
-		System.out.println(f.getAbsolutePath());
 		URLClassLoader child = new URLClassLoader(new URL[] {
 			new URL("file:///" + f.getAbsolutePath())
 		}, CustomHTML.class.getClassLoader());
@@ -60,7 +58,12 @@ public final class PluginLoader
 		
 		try
 		{
-			return clazz.newInstance();
+			CustomHTMLPlugin plugin = clazz.newInstance();
+			
+			plugin.setName(cfg.getString("name"));
+			plugin.setAuthor(cfg.getString("author"));
+			plugin.setVersion(cfg.getString("version"));
+			return plugin;
 		}
 		catch (InstantiationException e)
 		{

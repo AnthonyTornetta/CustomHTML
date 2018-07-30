@@ -383,6 +383,26 @@ public class Config
 	}
 	
 	/**
+	 * Sets a comment that relates to a given key
+	 * @param key The key to set the comment of
+	 * @param comment The comment to set it to
+	 */
+	public void setComment(String key, String comment)
+	{
+		comments.put(key, COMMENT_CHAR + " " + comment + "\r\n");
+	}
+	
+	/**
+	 * Gets the comment that points to a given key
+	 * @param key The key to find the comment for
+	 * @return The comment or null if no comment present
+	 */
+	public String getComment(String key)
+	{
+		return comments.get(key);
+	}
+	
+	/**
 	 * Saves the configuration file according to how yml files are formatted
 	 * <br>
 	 * Note: The config file can be saved multiple times, and there is no need to close it, just call this method to save it
