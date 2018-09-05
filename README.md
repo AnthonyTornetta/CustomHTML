@@ -35,7 +35,7 @@
 </if>
 <if x="$varName" notEqual y="1234">
   <h1>That var isn't 1234!</h1>
-</h1>
+</if>
 ```
 
 ^ Compiles into
