@@ -10,7 +10,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ public final class CustomHTML
 {
 	/**
 	 * If this text is present at the first line of a file that is being compiled,
-	 * the file will not be outputed into the compiled files directory
+	 * the file will not be outputted into the compiled files directory
 	 */
 	public static final String NO_OUTPUT_FLAG = "<!--NOOUTPUT-->";
 	
@@ -265,8 +264,7 @@ public final class CustomHTML
 				if(extension.equalsIgnoreCase("jar"))
 				{
 					CustomHTMLPlugin p = PluginLoader.loadPlugin(f);
-
-
+					
 					System.out.println("Enabling plugin \"" + p.getName() + "\" V(" + p.getVersion() + ")" + " by " + p.getAuthor());
 					p.enable();
 				}
@@ -349,10 +347,10 @@ public final class CustomHTML
 
 			String name = tagString.substring(0, space);
 
-			// Handles Any Tags That Their Insides Shouldn't Be Touched By Me //
+			// Handles Any Tags That Their Insides Shouldn't Be Touched By Me
 
 			boolean wasInIgnoredCode = false;
-
+			
 			if(name.equals("!--")) // Ignores blocks of comments
 			{
 				wasInIgnoredCode = true;
@@ -454,17 +452,8 @@ public final class CustomHTML
 					{
 						Map<String, String> theirVariables = new HashMap<>();
 						theirVariables.putAll(variables);
-
-						String varsStr = attributes.get("vars");
-						if(varsStr != null)
-						{
-							String[] vars = OutsidePattern.split(varsStr, "=", "'");
-							for(int i = 0; i < vars.length; i += 2)
-							{
-								theirVariables.put(vars[i], vars[i + 1].substring(1, vars[i + 1].length() - 1)); // Removes the apostrophies surrounding the variable
-							}
-						}
-
+						theirVariables.putAll(attributes);
+						
 						Result[] results = customTag.use(lines, attributes, tagStart, tagEnd, theirVariables, variables);
 
 						if(!running)
@@ -495,7 +484,7 @@ public final class CustomHTML
 							// Reset the tag end to the last bit added, and there's not need to reset the first as that's reset later
 							int length;
 
-							if(results[0] == null)
+							if(results[0] == null || results[0].getRepWith() == null)
 							 	length = tagEnd;
 							else
 								length = results[0].getRepWith().length();
