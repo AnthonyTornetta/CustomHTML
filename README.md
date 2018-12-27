@@ -21,7 +21,7 @@
 <h2>What Tags Are Present in the Core Plugin?</h2>
 
 ```html
-<template src="/path/to/file.html" vars="varName='value'" /> <!-- Copies and pastes one file into this one -->
+<template src="/path/to/file.html" varName="value" /> <!-- Copies and pastes one file into this one -->
 ```
 
 ```html
