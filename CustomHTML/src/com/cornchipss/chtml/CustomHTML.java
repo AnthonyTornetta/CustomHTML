@@ -50,6 +50,11 @@ public final class CustomHTML
 	private static String saveTo;
 	
 	/**
+	 * All files that should not be copied to new directory
+	 */
+	private static String[] ignoredFiles;
+	
+	/**
 	 * A boolean flag that if false will stop the program's execution
 	 */
 	private static boolean running = true;
@@ -81,7 +86,7 @@ public final class CustomHTML
 
 		System.out.println(files.size() + " files found to process...");
 
-		int filesOutputed = 0;
+		int filesOutputted = 0;
 
 		// Goes through each file and parses if it needed, otherwise copies it over
 		for(int i = 0; i < files.size(); i++)
@@ -89,7 +94,9 @@ public final class CustomHTML
 			File f = files.get(i);
 
 			String newLines = null;
-
+			
+			String extension = f.getName().substring(f.getName().lastIndexOf(".") + 1).toLowerCase();
+			
 			if(isFileToParse(f))
 			{
 				try
@@ -103,25 +110,38 @@ public final class CustomHTML
 					return;
 				}
 
-				if(newLines == null)
+				if(newLines != null)
 				{
-					System.out.println((i + 1) + "/" + files.size() + " files completed.");
-					continue; // This is a no-output file
+					saveToCompiledDir(f, newLines);
+					filesOutputted++;
 				}
-
-				saveToCompiledDir(f, newLines);
 			}
 			else
 			{
+				boolean copy = true;
+				
+				for(String ignoredExtension : ignoredFiles)
+				{
+					if(extension.equals(ignoredExtension))
+					{
+						copy = false;
+						break;
+					}
+				}
+				
 				// Copies the file to the new directory if they cannot be parsed
-				copyFileToNewDir(f);
+				
+				if(copy)
+				{
+					copyFileToNewDir(f);
+					filesOutputted++;
+				}
 			}
 
 			System.out.println((i + 1) + "/" + files.size() + " files completed.");
-			filesOutputed++;
 		}
 
-		System.out.println("Complete! " + filesOutputed + " file" + (filesOutputed != 1 ? "s" : "") + " outputted!");
+		System.out.println("Complete! " + filesOutputted + " file" + (filesOutputted != 1 ? "s" : "") + " outputted!");
 	}
 
 	/**
@@ -131,11 +151,15 @@ public final class CustomHTML
 	 * @throws IOException If there is an error saving the config
 	 */
 	private void loadConfig(Config cfg, String[] args) throws IOException
-	{
-		if(args.length == 2)
+	{	
+		if(args.length >= 2)
 		{
 			cfg.setString("relative-dir", args[0]);
 			cfg.setString("save-to", args[1]);
+			
+			if(args.length == 3)
+				cfg.setString("no-copy-extensions", args[2]);
+			
 			cfg.save();
 		}
 
@@ -184,12 +208,17 @@ public final class CustomHTML
 
 			System.exit(1);
 		}
-
-		String extensions = cfg.getString("compilable-extensions");
-
-		compilableExtensions = extensions.replace(" ", "").split(",");
+		
+		if(!cfg.containsKey("no-copy-extensions"))
+		{
+			cfg.setString("no-copy-extensions", "");
+			cfg.save();
+		}
+		
+		compilableExtensions = cfg.getString("compilable-extensions").replace(" ", "").split(",");
 		relativeDir = cfg.getString("relative-dir");
 		saveTo = cfg.getString("save-to");
+		ignoredFiles = cfg.getString("no-copy-extensions").replace(" ", "").split(",");
 	}
 
 	/**
