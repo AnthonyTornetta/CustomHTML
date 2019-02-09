@@ -14,17 +14,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import com.cornchipss.chtml.bexp.OutsidePattern;
 import com.cornchipss.chtml.exceptions.InvalidPluginYMLException;
 import com.cornchipss.chtml.plugins.CustomHTMLPlugin;
 import com.cornchipss.chtml.plugins.PluginLoader;
 import com.cornchipss.chtml.results.Result;
 import com.cornchipss.chtml.tags.ICustomTag;
+import com.cornchipss.chtml.util.CachedFile;
 import com.cornchipss.chtml.util.Config;
 import com.cornchipss.chtml.util.Helper;
+import com.cornchipss.chtml.util.TagUtils;
 
 public final class CustomHTML
 {
@@ -59,6 +61,24 @@ public final class CustomHTML
 	 */
 	private static boolean running = true;
 	
+	/**
+	 * Caches files that have already been compiled
+	 */
+	private static Map<File, List<CachedFile>> cachedFiles = new HashMap<>();
+	
+	public static final String[] ignoredTagsWithChunks = 
+		{
+			"!--", "-->",
+			"?", "?>",
+			"?php", "?>",
+			"script", "</script>"
+		};
+	
+	public static final String[] skipTags = 
+		{
+			"!doctype"	
+		};
+	
 	public static void main(String[] args) throws IOException, InvalidPluginYMLException
 	{
 		new CustomHTML(args);
@@ -88,6 +108,8 @@ public final class CustomHTML
 
 		int filesOutputted = 0;
 
+		long millis = System.currentTimeMillis();
+		
 		// Goes through each file and parses if it needed, otherwise copies it over
 		for(int i = 0; i < files.size(); i++)
 		{
@@ -142,6 +164,7 @@ public final class CustomHTML
 		}
 
 		System.out.println("Complete! " + filesOutputted + " file" + (filesOutputted != 1 ? "s" : "") + " outputted!");
+		System.out.println("Took " + (System.currentTimeMillis() - millis) + "ms");
 	}
 
 	/**
@@ -301,8 +324,6 @@ public final class CustomHTML
 		}
 	}
 
-	// TODO: Make replaceAllNeeded less sloppy
-
 	/**
 	 * Parses the CustomHTML in a file into HTML
 	 * @param f The file to parse
@@ -313,96 +334,115 @@ public final class CustomHTML
 	 */
 	public static String replaceAllNeeded(File f, Map<String, String> variables, boolean stopIfNoOutput) throws IOException
 	{
-		String lines = "";
-
-		BufferedReader br = new BufferedReader(new FileReader(f));
-
-		int lineNumber = 1;
-
-		for(String line = br.readLine(); line != null; line = br.readLine())
+		// Chaching saves time compiling many files if one file (for example a nav template) is the same for each file so it isn't recompiled every time
+		if(cachedFiles.containsKey(f))
 		{
-			if(line.length() >= NO_OUTPUT_FLAG.length())
+			if(stopIfNoOutput)
 			{
-				String substr = line.substring(0, NO_OUTPUT_FLAG.length());
-				if(substr.equalsIgnoreCase(NO_OUTPUT_FLAG) && lineNumber == 1)
-				{
-					if(stopIfNoOutput)
-					{
-						br.close();
-						return null;
-					}
-
-					line = Helper.removeTrailingWhiteSpace(line.substring(NO_OUTPUT_FLAG.length()));
-				}
-
-				lineNumber++;
+				BufferedReader br = new BufferedReader(new FileReader(f));
+				String firstLine = br.readLine();
+				br.close();
+				
+				if(firstLine != null && isNoOutput(firstLine))
+					return null;
 			}
-
-			lines += line + "\n";
+			
+			List<CachedFile> fileVariations = cachedFiles.get(f);
+			
+			System.out.println("A cached file was found!");
+			
+			for(CachedFile cached : fileVariations)
+			{
+				Set<String> cachedVars = cached.variables.keySet();
+				Set<String> vars = variables.keySet();
+				
+				boolean isSame = true;
+				
+				if(vars.size() == cachedVars.size())
+				{
+					for(String s : vars)
+					{
+						if(!cachedVars.contains(s))
+						{
+							isSame = false;
+							break;
+						}
+					}
+				}
+				else
+					isSame = false;
+				
+				if(isSame)
+					return cached.lines; // It's the same file and same variables, so no need to re-parse it
+			}
 		}
-		br.close();
-
+		
+		// These cloned variables will be used to store in a cached file
+		Map<String, String> variablesCloned = new HashMap<>();
+		for(String s : variables.keySet())
+			variablesCloned.put(s, variables.get(s));
+		
+		String lines = readCompilableFile(f, stopIfNoOutput);
+		
+		if(lines == null)
+			return null;
+		
 		int tagStart = lines.indexOf("<");
 		int tagEnd = lines.indexOf(">");
 
+		mainLoop:
 		while(tagStart != -1 && tagEnd != -1)
 		{
 			String tagString;
 
 			try
 			{
-				tagString = Helper.removeTrailingWhiteSpace(lines.substring(tagStart + 1, tagEnd));
+				tagString = TagUtils.stripTag(Helper.removeTrailingWhiteSpace(lines.substring(tagStart + 1, tagEnd)));
 			}
 			catch(Exception ex)
-			{
-				System.out.println("!! BAD HTML TAG OPENING/CLOSING DETECTED IN FILE \"" + f.getPath() + "\" !!");
-				System.out.println("== Debug Info ==");
-				System.out.println("Start/End: " + tagStart + " | finish: " + tagEnd);
-				System.out.println("Start text: " + lines.substring(tagStart));
-				System.out.println("End text: " + lines.substring(tagEnd));
-				System.out.println("Stopping Compilation.");
-
+			{								
+				StringBuilder toWrite = new StringBuilder();
+				
+				toWrite.append("!! BAD HTML TAG OPENING/CLOSING DETECTED IN FILE \"" + f.getPath() + "\" !!\n");
+				toWrite.append("== Debug Info ==\n");
+				toWrite.append("Tag Start: " + tagStart + " | Tag End: " + tagEnd + "\n");
+				toWrite.append("Start text: " + lines.substring(tagStart) + "\n");
+				toWrite.append("End text: " + lines.substring(tagEnd) + "\n");
+				
+				System.out.println(toWrite);
+				
+				toWrite.append("\nFile Parsed\n");
+				toWrite.append(lines);
+				
+				BufferedWriter bw = new BufferedWriter(new FileWriter("error-log.txt"));
+				bw.write(toWrite.toString());
+				bw.close();
 				throw ex;
 			}
-
-			boolean isClosingTag = tagString.charAt(0) == '/';
-			if(isClosingTag)
+			
+			if(TagUtils.isClosingTag(tagString))
 				tagString = Helper.removeTrailingWhiteSpace(tagString.substring(1)); // remove the pesky '/'
-
-			// Finds the name of the tag by separating it from its attributes
-			int space = tagString.indexOf(" ");
-			if(space == -1)
-				space = tagString.length();
-
-			String name = tagString.substring(0, space);
-
+			
+			String name = TagUtils.getName(tagString).replace("\n", "").replace("\r", "");
+			
 			// Handles Any Tags That Their Insides Shouldn't Be Touched By Me
 
 			boolean wasInIgnoredCode = false;
 			
-			if(name.equals("!--")) // Ignores blocks of comments
+			for(int i = 0; i < ignoredTagsWithChunks.length; i += 2)
 			{
-				wasInIgnoredCode = true;
-				int[] startEnd = findClosingTag("-->", lines, tagStart + 1);
-				tagStart = startEnd[0];
-				tagEnd = startEnd[1] + 1;
-				tagStart++;
+				if(name.equalsIgnoreCase(ignoredTagsWithChunks[i]))
+				{
+					wasInIgnoredCode = true;
+					int[] startEnd = findClosingTag(ignoredTagsWithChunks[i + 1], lines, tagStart + 1);
+					tagStart = startEnd[0];
+					tagEnd = startEnd[1] + 1;
+					tagStart++;
+					
+					continue mainLoop;
+				}
 			}
-			else if(name.length() >= "?".length() && name.contains("?")) // Ignores blocks of php
-			{
-				wasInIgnoredCode = true;
-				int[] startEnd = findClosingTag("?>", lines, tagEnd + 1);
-				tagStart = startEnd[0];
-				tagEnd = startEnd[1] + 1;
-			}
-			else if(name.equals("script")) // Ignores blocks of js
-			{
-				wasInIgnoredCode = true;
-				int[] startEnd = findClosingTag("</script>", lines, tagEnd + 1);
-				tagStart = startEnd[0];
-				tagEnd = startEnd[1] + 1;
-			}
-
+			
 			if(tagStart > tagEnd)
 			{
 				tagStart = -1;
@@ -411,150 +451,126 @@ public final class CustomHTML
 
 			if(wasInIgnoredCode)
 				continue;
-
-			if(!name.equalsIgnoreCase("!DOCTYPE"))
+			
+			if(Helper.indexOf(skipTags, name.toLowerCase()) == -1)
 			{
 				/**
 				 * Attributes are stored in here as attribute name: value.
 				 * If the attribute has no value but is present, it is assigned to be an empty String
 				 */
-				Map<String, String> attributes = new HashMap<>();
-
-				String attributesString = tagString.substring(name.length(), tagString.length());
-
-				attributesString = Helper.removeTrailingWhiteSpace(attributesString);
-
-				if(attributesString.length() != 0)
+				Map<String, String> attributes = TagUtils.getAttributes(tagString, name);
+				
+				if(TagRegistry.getTag(name) != null)
 				{
-					if(attributesString.charAt(attributesString.length() - 1) == '/')
+					ICustomTag customTag = TagRegistry.getTag(name);
+					
+					Map<String, String> theirVariables = new HashMap<>();
+					theirVariables.putAll(variables);
+					theirVariables.putAll(attributes);
+					
+					Result[] results = customTag.use(lines, attributes, tagStart, tagEnd, theirVariables, variables);
+
+					if(!running)
 					{
-						attributesString = Helper.removeTrailingWhiteSpace(attributesString.substring(0, attributesString.length() - 1));
+						System.err.println("Compilation stopped during this file's compilation: " + f.getAbsolutePath());
+						System.exit(1);
 					}
 
-					if(attributesString.length() != 0)
+					if(results != null)
 					{
-						String[] attrsSplitSpace = OutsidePattern.split(attributesString, " ", "\"");
+						String firstHalf = lines.substring(0, tagStart);
 
-						for(String attrLine : attrsSplitSpace)
+						// Go through the results backwards so their indexes aren't messed up
+						for(int i = results.length - 1; i >= 0; i--)
 						{
-							String[] splitEquals = OutsidePattern.split(attrLine, "=", "\"");
+							if(results[i] == null)
+								continue; // There was no change
+							
+							int replaceStart = results[i].getStart();
+							int replaceEnd = results[i].getEnd();
 
-							if(splitEquals.length > 1) // for full attributes (something="asdf")
-							{
-								int quoteIndexBegin = splitEquals[1].indexOf("\"");
-								int quoteIndexEnd;
-								if(quoteIndexBegin == -1)
-								{
-									quoteIndexBegin = splitEquals[1].indexOf("'");
-									quoteIndexEnd = splitEquals[1].lastIndexOf("'");
-								}
-								else
-								{
-									quoteIndexEnd = splitEquals[1].lastIndexOf("\"");
-								}
+							firstHalf = lines.substring(0, replaceStart);
+							String lastHalf = lines.substring(replaceEnd);
 
-								attributes.put(splitEquals[0], splitEquals[1].substring(quoteIndexBegin + 1, quoteIndexEnd)); // Removes the ""s around the attribute
-							}
-							else if(splitEquals.length == 1) // There are some attributes w/ only a title and no value (e.g. download in the <a> tag), so handle those differently
-							{
-								attributes.put(splitEquals[0], ""); // Give it the value of an empty String
-							}
-							else
-							{
-								continue; // A line that is being skipped has been hit and has no characters after it
-
-								/*
-								 * This has been shown to happen during multiline comments that begin like this:
-								 * <!--
-								 * ...
-								 * -->
-								 * With no whitespace after the comment opening
-								 */
-							}
-						}
-					}
-				}
-
-				for(ICustomTag customTag : TagRegistry.getTags())
-				{
-					if(customTag.getName().equalsIgnoreCase(name))
-					{
-						Map<String, String> theirVariables = new HashMap<>();
-						theirVariables.putAll(variables);
-						theirVariables.putAll(attributes);
-						
-						Result[] results = customTag.use(lines, attributes, tagStart, tagEnd, theirVariables, variables);
-
-						if(!running)
-						{
-							System.err.println("Compilation stopped during this file's compilation: " + f.getAbsolutePath());
-							System.exit(1);
+							lines = firstHalf + results[i].getRepWith() + lastHalf;
 						}
 
-						if(results != null)
-						{
-							String firstHalf = lines.substring(0, tagStart);
+						// Reset the tag end to the last bit added, and there's not need to reset the first as that's reset later
+						int length;
 
-							// Go through the results backwards so their indexes aren't messed up
-							for(int i = results.length - 1; i >= 0; i--)
-							{
-								if(results[i] == null)
-									continue; // There was no change
-								
-								int replaceStart = results[i].getStart();
-								int replaceEnd = results[i].getEnd();
+						if(results[0] == null || results[0].getRepWith() == null)
+						 	length = tagEnd;
+						else
+							length = results[0].getRepWith().length();
 
-								firstHalf = lines.substring(0, replaceStart);
-								String lastHalf = lines.substring(replaceEnd);
-
-								lines = firstHalf + results[i].getRepWith() + lastHalf;
-							}
-
-							// Reset the tag end to the last bit added, and there's not need to reset the first as that's reset later
-							int length;
-
-							if(results[0] == null || results[0].getRepWith() == null)
-							 	length = tagEnd;
-							else
-								length = results[0].getRepWith().length();
-
-							tagEnd = firstHalf.length() + length - 1;
-						}
-
-						// A tag was found, no need to keep looking
-						break;
+						tagEnd = firstHalf.length() + length - 1;
 					}
 				}
 			}
 
-			if(tagEnd + 1 < lines.length() - 1)
+			int[] nextTags = findNextTag(lines, tagEnd);
+			tagStart = nextTags[0];
+			tagEnd = nextTags[1];
+		}
+		
+		List<CachedFile> here = cachedFiles.get(f);
+		if(here == null)
+			here = new ArrayList<>();
+		
+		here.add(new CachedFile(lines, variablesCloned));
+		
+		cachedFiles.put(f, here);
+		
+		return lines;
+	}
+
+	public static String readCompilableFile(File f, boolean stopIfNoOutput)
+	{
+		StringBuilder builder = new StringBuilder();
+		
+		try
+		{
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			boolean firstLine = true;
+			for(String line = br.readLine(); line != null; line = br.readLine())
 			{
-				String substring = lines.substring(tagEnd + 1);
-
-				int chunkOfLineBefore = lines.indexOf(substring);
-
-				int tempStart = substring.indexOf("<") + chunkOfLineBefore;
-				int tempEnd = substring.indexOf(">") + chunkOfLineBefore;
-
-				if(tempStart > tagStart && tempEnd > tagEnd)
+				if(firstLine && isNoOutput(line))
 				{
-					tagStart = tempStart;
-					tagEnd = tempEnd;
+					if(stopIfNoOutput)
+					{
+						br.close();
+						return null;
+					}
+					else
+						line = Helper.removeTrailingWhiteSpace(line.substring(NO_OUTPUT_FLAG.length())); // Remove the NOOUTPUT comment at the top
 				}
-				else
-				{
-					tagStart = -1;
-					tagEnd = -1;
-				}
+				
+				firstLine = false;
+				
+				builder.append(line);
+				builder.append(System.lineSeparator());
 			}
-			else
+			br.close();
+		}
+		catch(IOException ex)
+		{
+			throw new RuntimeException(ex);
+		}
+		
+		return builder.toString();
+	}
+
+	public static boolean isNoOutput(String line)
+	{
+		if(line.length() >= NO_OUTPUT_FLAG.length())
+		{
+			String substr = line.substring(0, NO_OUTPUT_FLAG.length());
+			if(substr.equalsIgnoreCase(NO_OUTPUT_FLAG))
 			{
-				tagStart = -1;
-				tagEnd = -1;
+				return true;
 			}
 		}
-
-		return lines;
+		return false;
 	}
 
 	/**
@@ -572,17 +588,45 @@ public final class CustomHTML
 		{
 			if(lines.substring(i, i + closingTag.length()).equalsIgnoreCase(closingTag))
 			{
+				
+				
 				start = i;
 				break;
 			}
 		}
-
+		
 		if(start == -1)
 			return new int[] { -1, -1 };
 		else
-			return new int[] { start, start + closingTag.length() - 1 };
+			return new int[] { start, start + closingTag.length() };
 	}
 
+	public static int[] findNextTag(String lines, int startSearch)
+	{
+		if(startSearch + 1 < lines.length() - 1)
+		{
+			String substring = lines.substring(startSearch + 1);
+
+			int chunkOfLineBefore = lines.indexOf(substring);
+
+			int tempStart = substring.indexOf("<") + chunkOfLineBefore;
+			int tempEnd = substring.indexOf(">") + chunkOfLineBefore;
+
+			if(tempStart > startSearch && tempEnd > startSearch)
+			{
+				return new int[] { tempStart, tempEnd };
+			}
+			else
+			{
+				return new int[] { -1, -1 };
+			}
+		}
+		else
+		{
+			return new int[] { -1, -1 };
+		}
+	}
+	
 	/**
 	 * Finds the absolute path of a directory that is relative<br>
 	 * For example: "/index.html" if the absolute path was "C:/asdf/stuff/" would return "C:/asdf/stuff/index.html"

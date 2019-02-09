@@ -12,6 +12,7 @@ public final class TagRegistry
 {
 	private static List<ICustomTag> tags = new ArrayList<>();
 	private static Map<ICustomTag, TagProperties> properties = new HashMap<>();
+	private static Map<String, ICustomTag> tagNames = new HashMap<>();
 	
 	/**
 	 * Registers a CustomHTML tag with the default tag properties
@@ -45,9 +46,15 @@ public final class TagRegistry
 	{
 		tags.clear();
 		tags.addAll(properties.keySet());
+		
+		for(ICustomTag tag : tags)
+		{
+			tagNames.put(tag.getName().toLowerCase(), tag);
+		}
 	}
 	
 	// Getters & Setters //
 	public static List<ICustomTag> getTags() { return tags; }
+	public static ICustomTag getTag(String name) { return tagNames.get(name.toLowerCase()); }
 	public static TagProperties getProperties(ICustomTag t) { return properties.get(t); }
 }

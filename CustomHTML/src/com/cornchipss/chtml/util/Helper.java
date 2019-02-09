@@ -234,4 +234,12 @@ public class Helper
 		else
 			return "";
 	}
+	
+	public static<T> int indexOf(T[] arr, T o)
+	{
+		for(int i = 0; i < arr.length; i++)
+			if(arr[i].equals(o))
+				return i;
+		return -1;
+	}
 }

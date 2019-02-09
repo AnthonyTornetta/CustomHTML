@@ -27,3 +27,6 @@ processor-config.yml
 /.recommenders/
 /.settings/
 /.metadata/
+
+# Error log generated
+error-log.txt
