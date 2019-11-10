@@ -36,16 +36,20 @@ public class TagUtils
 				attributesString = Helper.removeTrailingWhiteSpace(attributesString.substring(0, attributesString.length() - 1));
 			}
 
+			System.out.println(attributesString);
+			
 			if(attributesString.length() != 0)
 			{
-				String[] attrsSplitSpace = OutsidePattern.split(attributesString, " ", "\"");
-
+				String[] attrsSplitSpace = OutsidePattern.split(attributesString, " ", "\"", "'");
+				
 				for(String attrLine : attrsSplitSpace)
 				{
+					System.out.println(attrLine);
+					
 					if(attrLine.length() == 0)
 						continue; // It's empty meaning there was an empty space
 					
-					String[] splitEquals = OutsidePattern.split(attrLine, "=", "\"");
+					String[] splitEquals = OutsidePattern.split(attrLine, "=", "\"", "'");
 
 					if(splitEquals.length > 1) // for full attributes (something="asdf")
 					{

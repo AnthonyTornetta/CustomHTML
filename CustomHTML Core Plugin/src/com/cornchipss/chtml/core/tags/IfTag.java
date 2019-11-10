@@ -18,74 +18,77 @@ public class IfTag implements ICustomTag
 		
 		boolean evaluation = false;
 		
-		if(x.length() > 0)
+		if(x != null && y != null)
 		{
-			if(x.charAt(0) == '$')
-				x = localVars.get(x.substring(1));
-			if(y.charAt(0) == '$')
-				y = localVars.get(y.substring(1));
+			if(x.length() > 0)
+			{
+				if(x.charAt(0) == '$')
+					x = localVars.get(x.substring(1));
+				if(y.charAt(0) == '$')
+					y = localVars.get(y.substring(1));
+				
+				if(x == null)
+					x = "undefined";
+				if(y == null)
+					y = "undefined";
+			}
 			
-			if(x == null)
-				x = "undefined";
-			if(y == null)
-				y = "undefined";
-		}
-		
-		if(attributes.get("greaterOrEqual") != null)
-		{
-			if(Helper.isDouble(x) && Helper.isDouble(y))
+			if(attributes.get("greaterOrEqual") != null)
 			{
-				evaluation = Double.parseDouble(x) >= Double.parseDouble(y);
+				if(Helper.isDouble(x) && Helper.isDouble(y))
+				{
+					evaluation = Double.parseDouble(x) >= Double.parseDouble(y);
+				}
+				else
+				{
+					evaluation = x.compareTo(y) >= 0;
+				}
+			}
+			else if(attributes.get("greater") != null)
+			{
+				if(Helper.isDouble(x) && Helper.isDouble(y))
+				{
+					evaluation = Double.parseDouble(x) > Double.parseDouble(y);
+				}
+				else
+				{
+					evaluation = x.compareTo(y) > 0;
+				}
+			}
+			else if(attributes.get("less") != null)
+			{
+				if(Helper.isDouble(x) && Helper.isDouble(y))
+				{
+					evaluation = Double.parseDouble(x) < Double.parseDouble(y);
+				}
+				else
+				{
+					evaluation = x.compareTo(y) < 0;
+				}
+			}
+			else if(attributes.get("lessOrEqual") != null)
+			{
+				if(Helper.isDouble(x) && Helper.isDouble(y))
+				{
+					evaluation = Double.parseDouble(x) <= Double.parseDouble(y);
+				}
+				else
+				{
+					evaluation = x.compareTo(y) <= 0;
+				}
+			}
+			else if(attributes.get("equal") != null)
+			{
+				evaluation = x.equals(y);
+			}
+			else if(attributes.get("notEqual") != null)
+			{
+				evaluation = !x.equals(y);
 			}
 			else
 			{
-				evaluation = x.compareTo(y) >= 0;
+				evaluation = false;
 			}
-		}
-		else if(attributes.get("greater") != null)
-		{
-			if(Helper.isDouble(x) && Helper.isDouble(y))
-			{
-				evaluation = Double.parseDouble(x) > Double.parseDouble(y);
-			}
-			else
-			{
-				evaluation = x.compareTo(y) > 0;
-			}
-		}
-		else if(attributes.get("less") != null)
-		{
-			if(Helper.isDouble(x) && Helper.isDouble(y))
-			{
-				evaluation = Double.parseDouble(x) < Double.parseDouble(y);
-			}
-			else
-			{
-				evaluation = x.compareTo(y) < 0;
-			}
-		}
-		else if(attributes.get("lessOrEqual") != null)
-		{
-			if(Helper.isDouble(x) && Helper.isDouble(y))
-			{
-				evaluation = Double.parseDouble(x) <= Double.parseDouble(y);
-			}
-			else
-			{
-				evaluation = x.compareTo(y) <= 0;
-			}
-		}
-		else if(attributes.get("equal") != null)
-		{
-			evaluation = x.equals(y);
-		}
-		else if(attributes.get("notEqual") != null)
-		{
-			evaluation = !x.equals(y);
-		}
-		else
-		{
-			evaluation = false;
 		}
 		
 		int[] closingTagPos = CustomHTML.findClosingTag("</" + getName() + ">", lines, tagEnd + 1);

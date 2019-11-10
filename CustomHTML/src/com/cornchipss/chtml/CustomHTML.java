@@ -458,6 +458,8 @@ public final class CustomHTML
 				 * Attributes are stored in here as attribute name: value.
 				 * If the attribute has no value but is present, it is assigned to be an empty String
 				 */
+				System.out.println(tagString);
+				
 				Map<String, String> attributes = TagUtils.getAttributes(tagString, name);
 				
 				if(TagRegistry.getTag(name) != null)

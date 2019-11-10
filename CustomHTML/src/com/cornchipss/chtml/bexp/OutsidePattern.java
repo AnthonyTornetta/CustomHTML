@@ -55,35 +55,129 @@ public class OutsidePattern
 		return indexOf(str, lookFor, notIn, notIn);
 	}
 	
-	public static String[] split(String str, String lookFor, String notInBegin, String notInEnd)
-	{		
+	public static String[] split(String str, String lookFor, String[] notInBegin, String[] notInEnd)
+	{
+		if(notInBegin.length == 0)
+			return str.split(lookFor);
+		
+		if(notInBegin.length != notInEnd.length)
+			throw new IllegalArgumentException("notInBeing and notInEnd cannot differ in length!");
+		
 		List<String> splitList = new ArrayList<>();
+				
+		for(String s : notInBegin)
+			System.out.println(s);
 		
-		int index = indexOf(str, lookFor, notInBegin, notInEnd);
-		int lastIndex = -1;
+		int[] counter = new int[notInBegin.length];
+		System.out.println("LEN: " + counter.length);
 		
-		while(index != lastIndex && index + 1 != str.length())
+		StringBuilder builder = new StringBuilder();
+		
+		for(int i = 0; i < str.length(); i++)
 		{
-			splitList.add(str.substring(lastIndex + 1, index));
-			
-			lastIndex = index;
-			
-			index = index + 1 + OutsidePattern.indexOf(str.substring(index + 1), lookFor, notInBegin, notInEnd);
+			if(i < str.length() - lookFor.length())
+			{
+				if(str.substring(i, i + lookFor.length()).equals(lookFor))
+				{
+					boolean canSplit = true;
+					for(int j = 0; j < counter.length; j++)
+					{
+						System.out.println(j + ": " + counter[j]);
+						
+						if(counter[j] != 0)
+						{
+							canSplit = false;
+							break;
+						}
+					}
+					
+					if(canSplit)
+					{
+						splitList.add(builder.toString());
+						builder = new StringBuilder();
+					}
+					else
+						builder.append(str.charAt(i));
+				}
+				else
+				{
+					builder.append(str.charAt(i));
+					
+					for(int j = 0; j < notInBegin.length; j++)
+					{
+						String notInB =  notInBegin[j];
+						String notInE = notInEnd[j];
+						
+						if(i < str.length() + notInB.length())
+						{
+							if(str.substring(i, i + notInB.length()).equals(notInB))
+							{
+								boolean isValid = true;
+								
+								for(int l = -1; l >= -i; l++)
+								{
+									if(str.charAt(i + l) == '\\')
+									{
+										isValid = !isValid;
+									}
+									else
+										break;
+								}
+								
+								if(isValid)
+								{
+									if(notInB.equals(notInE) && counter[j] == 1)
+										counter[j]--;
+									else
+										counter[j]++;
+								}
+							}
+						}
+						
+						if(!notInB.equals(notInE) && i < str.length() + notInE.length())
+						{
+							if(str.substring(i, i + notInE.length()).equals(notInE))
+							{
+								boolean isValid = true;
+								
+								for(int l = -1; l >= -i; l++)
+								{
+									if(str.charAt(i + l) == '\\')
+									{
+										isValid = !isValid;
+									}
+									else
+										break;
+								}
+								
+								if(isValid)
+								{
+									counter[j]--;
+									if(counter[j] < 0)
+										counter[j] = 0;
+								}
+							}
+						}
+					}
+				}
+			}
+			else
+				builder.append(str.charAt(i));
 		}
 		
-		if(lastIndex + 1 != str.length())
-			splitList.add(str.substring(lastIndex + 1));
+		if(!builder.toString().isEmpty())
+			splitList.add(builder.toString());
 		
 		String[] arr = new String[splitList.size()];
-		for(int i = 0; i < arr.length; i++)
-		{
-			arr[i] = splitList.get(i);
-		}
-		
+//		for(int i = 0; i < splitList.size(); i++)
+//		{
+//			arr[i] = splitList.get(i);
+//		}
+		System.arraycopy(splitList.toArray(), 0, arr, 0, splitList.size());
 		return arr;
 	}
 	
-	public static String[] split(String str, String lookFor, String notIn)
+	public static String[] split(String str, String lookFor, String... notIn)
 	{
 		return split(str, lookFor, notIn, notIn);
 	}
