@@ -349,8 +349,6 @@ public final class CustomHTML
 			
 			List<CachedFile> fileVariations = cachedFiles.get(f);
 			
-			System.out.println("A cached file was found!");
-			
 			for(CachedFile cached : fileVariations)
 			{
 				Set<String> cachedVars = cached.variables.keySet();
@@ -458,8 +456,6 @@ public final class CustomHTML
 				 * Attributes are stored in here as attribute name: value.
 				 * If the attribute has no value but is present, it is assigned to be an empty String
 				 */
-				System.out.println(tagString);
-				
 				Map<String, String> attributes = TagUtils.getAttributes(tagString, name);
 				
 				if(TagRegistry.getTag(name) != null)

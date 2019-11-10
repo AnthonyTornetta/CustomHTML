@@ -64,12 +64,8 @@ public class OutsidePattern
 			throw new IllegalArgumentException("notInBeing and notInEnd cannot differ in length!");
 		
 		List<String> splitList = new ArrayList<>();
-				
-		for(String s : notInBegin)
-			System.out.println(s);
 		
 		int[] counter = new int[notInBegin.length];
-		System.out.println("LEN: " + counter.length);
 		
 		StringBuilder builder = new StringBuilder();
 		
@@ -82,8 +78,6 @@ public class OutsidePattern
 					boolean canSplit = true;
 					for(int j = 0; j < counter.length; j++)
 					{
-						System.out.println(j + ": " + counter[j]);
-						
 						if(counter[j] != 0)
 						{
 							canSplit = false;
@@ -169,10 +163,6 @@ public class OutsidePattern
 			splitList.add(builder.toString());
 		
 		String[] arr = new String[splitList.size()];
-//		for(int i = 0; i < splitList.size(); i++)
-//		{
-//			arr[i] = splitList.get(i);
-//		}
 		System.arraycopy(splitList.toArray(), 0, arr, 0, splitList.size());
 		return arr;
 	}
