@@ -7,8 +7,10 @@ import java.util.Map;
 
 import com.cornchipss.chtml.CustomHTML;
 import com.cornchipss.chtml.bexp.OutsidePattern;
+import com.cornchipss.chtml.compiling.CHTMLCompiler;
 import com.cornchipss.chtml.results.Result;
 import com.cornchipss.chtml.tags.ICustomTag;
+import com.cornchipss.chtml.util.DirectoryUtils;
 import com.cornchipss.chtml.util.Helper;
 
 public class TemplateTag implements ICustomTag
@@ -20,7 +22,7 @@ public class TemplateTag implements ICustomTag
 		
 		if(src != null)
 		{
-			src = CustomHTML.calculateRelativeDir(src);
+			src = DirectoryUtils.calculateRelativeDir(src);
 			
 			File templateFile = new File(src);
 			
@@ -50,11 +52,11 @@ public class TemplateTag implements ICustomTag
 			String linesToCopy;
 			try
 			{
-				linesToCopy = CustomHTML.replaceAllNeeded(templateFile, vars, false);
+				linesToCopy = CHTMLCompiler.compile(templateFile, vars, false);
 			}
 			catch (IOException e)
 			{
-				CustomHTML.stopCompilation("Template File (" + templateFile + ") Not Found!");
+				CustomHTML.stopRunning("Template File (" + templateFile + ") Not Found!");
 				return null;
 			}
 			

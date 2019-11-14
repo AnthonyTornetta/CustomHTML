@@ -2,6 +2,7 @@ package com.cornchipss.chtml.core.tags;
 
 import java.util.Map;
 
+import com.cornchipss.chtml.CustomHTML;
 import com.cornchipss.chtml.results.Result;
 import com.cornchipss.chtml.tags.ICustomTag;
 
@@ -16,12 +17,21 @@ public class VarTag implements ICustomTag
 			String value = attributes.get("value");			
 			if(value == null)
 			{
-				return new Result[] { new Result(localVars.get(varName), tagStart, tagEnd + 1) };
+				String local = localVars.get(varName);
+				return new Result[] { new Result(local != null ? local : CustomHTML.getGlobalVars().get(varName), tagStart, tagEnd + 1) };
 			}
 			else
 			{
-				// Setting the outerVars so the value is added to the global variable, as opposed to this tag's local variables
-				outerVars.put(varName, value);
+				if(attributes.containsKey("global"))
+				{
+					CustomHTML.getGlobalVars().put(varName, value);
+				}
+				else
+				{
+					// Setting the outerVars so the value is added to the global variable, as opposed to this tag's local variables
+					outerVars.put(varName, value);
+				}
+				
 				return new Result[] { new Result("", tagStart, tagEnd + 1) };
 			}
 		}

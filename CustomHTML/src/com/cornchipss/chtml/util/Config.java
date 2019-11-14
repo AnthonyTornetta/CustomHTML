@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Config
 {
@@ -468,5 +469,30 @@ public class Config
 		}
 		
 		bw.close();
+	}
+
+	public Set<String> getStrings()
+	{
+		return strings.keySet();
+	}
+	
+	public Set<String> getDoubles()
+	{
+		return doubles.keySet();
+	}
+	
+	public Set<String> getInts()
+	{
+		return ints.keySet();
+	}
+	
+	public Set<String> getDoubleArrays()
+	{
+		return doubleArrays.keySet();
+	}
+	
+	public Set<String> getIntArrays()
+	{
+		return intArrays.keySet();
 	}
 }

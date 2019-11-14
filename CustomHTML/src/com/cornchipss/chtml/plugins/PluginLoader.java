@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import com.cornchipss.chtml.CustomHTML;
 import com.cornchipss.chtml.exceptions.InvalidPluginYMLException;
 import com.cornchipss.chtml.util.Config;
+import com.cornchipss.chtml.util.Helper;
 
 public final class PluginLoader
 {
@@ -77,5 +78,31 @@ public final class PluginLoader
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * Loads all the plugins in the plugins folder
+	 * @param pluginsDirectory The plugins directory to load them from
+	 * @throws InvalidPluginYMLException If one of the plugins has an invalid YML
+	 * @throws IOException If there was an error reading one of the plugin files
+	 */
+	public static void loadPlugins(File pluginsDirectory) throws InvalidPluginYMLException, IOException
+	{
+		System.out.println(pluginsDirectory.getAbsolutePath());
+		for(File f : pluginsDirectory.listFiles())
+		{
+			System.out.println(f);
+			if(!f.isDirectory())
+			{
+				String extension = Helper.getExtension(f);
+				if(extension.equalsIgnoreCase("jar"))
+				{
+					CustomHTMLPlugin p = PluginLoader.loadPlugin(f);
+					
+					System.out.println("Enabling plugin \"" + p.getName() + "\" V(" + p.getVersion() + ")" + " by " + p.getAuthor());
+					p.enable();
+				}
+			}
+		}
 	}
 }

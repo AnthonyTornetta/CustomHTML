@@ -2,9 +2,9 @@ package com.cornchipss.chtml.core.tags;
 
 import java.util.Map;
 
-import com.cornchipss.chtml.CustomHTML;
 import com.cornchipss.chtml.results.Result;
 import com.cornchipss.chtml.tags.ICustomTag;
+import com.cornchipss.chtml.util.HTMLUtils;
 import com.cornchipss.chtml.util.Helper;
 
 public class IfTag implements ICustomTag
@@ -91,7 +91,7 @@ public class IfTag implements ICustomTag
 			}
 		}
 		
-		int[] closingTagPos = CustomHTML.findClosingTag("</" + getName() + ">", lines, tagEnd + 1);
+		int[] closingTagPos = HTMLUtils.findClosingTag("</" + getName() + ">", lines, tagEnd + 1);
 		int closingStart = closingTagPos[0];
 		int closingEnd = closingTagPos[1];
 		
